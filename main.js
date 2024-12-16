@@ -58,8 +58,19 @@ function initTray() {
   tray.addListener('click', showSettingWindow);
   tray.setContextMenu(
     Menu.buildFromTemplate([
-      // { type: 'separator' },
+      { type: 'separator' },
+      {
+        label: '关闭全部',
+        type: 'submenu',
+        submenu: [
+          { type: 'separator' },
+          { label: '关闭', click: closeAll },
+          { label: '隐藏', role: 'quit' },
+          { label: '删除', role: 'quit' },
+        ],
+      },
       { label: '关闭全部', click: closeAll },
+      { label: '隐藏全部', click: closeAll },
       { label: '退出', role: 'quit' },
     ])
   );
