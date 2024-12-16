@@ -1,0 +1,83 @@
+/* latin */
+@font-face {
+  font-family: 'Modern Antiqua';
+  src: url(./font.woff2) format('woff2');
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  font-family: 'Modern Antiqua', cursive;
+}
+
+body {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  padding: 15px;
+  box-sizing: border-box;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: transparent;
+  animation: floatAnimation 4s linear infinite;
+}
+
+/* 定义浮动动画关键帧 */
+@keyframes floatAnimation {
+  0%,
+  100% {
+    transform: translateY(10px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.clock-img {
+  flex: 1;
+  height: 0;
+}
+
+.hour-hand,
+.minute-hand,
+.second-hand {
+  position: absolute;
+  bottom: 51vh;
+  left: 55.6vw;
+  background-color: #b3715b;
+  text-shadow: 0px 0px 10px #d99981;
+  transform-origin: 50% 100%; /* 将变换原点设置在指针的顶端 */
+  transform: translate(-50%, -100%); /* 将指针的起点移动到钟表的中心 */
+  border-radius: 10px;
+}
+
+.hour-hand {
+  width: 5.5px; /* 设置时针的宽度 */
+  height: 7vh; /* 设置时针的长度 */
+}
+
+.minute-hand {
+  width: 4.5px; /* 设置分针的宽度 */
+  height: 10vh; /* 设置分针的长度 */
+}
+
+.second-hand {
+  width: 3.5px; /* 设置秒针的宽度 */
+  height: 13vh; /* 设置分针的长度 */
+}
+
+.digital-time {
+  color: #c58b75; /* 红色 */
+  font-size: 10vh; /* 字体大小 */
+  text-align: center; /* 文本居中 */
+  line-height: 1em;
+}
+
+.digital-date {
+  color: #c58b75; /* 正红色 */
+  font-size: 5vh; /* 字体大小 */
+  text-align: center; /* 文本居中 */
+  line-height: 1em;
+}
