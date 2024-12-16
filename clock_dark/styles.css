@@ -8,6 +8,7 @@
   margin: 0;
   padding: 0;
   font-family: 'Modern Antiqua', cursive;
+  user-select: none;
 }
 
 body {
@@ -16,12 +17,15 @@ body {
   align-items: center;
   flex-direction: column;
   padding: 15px;
-  box-sizing: border-box;
   height: 100vh;
   width: 100vw;
   overflow: hidden;
   background: transparent;
   animation: floatAnimation 4s linear infinite;
+  box-sizing: border-box;
+  cursor: move;
+  -webkit-app-region: drag;
+  pointer-events: none;
 }
 
 /* 定义浮动动画关键帧 */

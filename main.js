@@ -1,86 +1,99 @@
-const { app, shell, Tray, Menu, BrowserWindow, Notification, powerMonitor } = require('electron');
-const fs = require('fs');
+const { app, shell, Tray, Menu, BrowserWindow, Notification, powerMonitor, ipcMain } = require('electron');
 const path = require('path');
 const package = require('./package.json');
 
 // ----------------- 浮动窗口控制 ----------------- //
-// 窗口集合
-let winMap = {};
 // 创建窗口
-function createWindow() {
+function showLeaf(path) {
+  const width = 360;
+  const height = 500;
   const win = new BrowserWindow({
-    width: 600,
-    height: 600,
+    width,
+    height,
     transparent: true,
-    resizable: false,
+    resizable: true,
     frame: false,
-    icon: './clock_dark/clock.png',
+    alwaysOnTop: true,
+    icon: `${path}/logo.png`,
     webPreferences: {
       devTools: false,
       nodeIntegration: true,
-      enablemotemodule: true,
+      enableRemoteModule: true,
+      // preload: './preload.js',
     },
   });
-  win.loadFile('./clock_dark/clock_dark.html');
-  winMap[win.id] = win;
-}
-// 关闭全部窗口
-function closeAll() {
-  Object.values(winMap).forEach((win) => win.close());
-  winMap = {};
-}
+  win.loadFile(`${path}/index.html`);
+  win.setSkipTaskbar(true);
 
-// ----------------- 设置窗口控制 ----------------- //
-let settingWin = null;
-function showSettingWindow() {
-  if (!settingWin) {
-    settingWin = new BrowserWindow({
-      width: 600,
-      height: 600,
-      transparent: true,
-      resizable: false,
-      frame: false,
-      icon: './clock_dark/clock.png',
-      webPreferences: {
-        devTools: false,
-        nodeIntegration: true,
-        enablemotemodule: true,
-      },
-    });
-    settingWin.loadFile('./clock_dark/clock_dark.html');
-  }
+  // 双击左键关闭
+  // let lastTime = 0;
+  // win.hookWindowMessage(528, function () {
+  //   const time = Date.now();
+  //   if (time - lastTime < 300) win.close();
+  //   else lastTime = time;
+  // });
+
+  // 滚轮放大
+  let zoomLevel = 1;
+  win.hookWindowMessage(522, function (e) {
+    if (Object.values(e)[3] < 127) {
+      zoomLevel += 0.05;
+    } else {
+      zoomLevel -= 0.05;
+    }
+    // const [x, y] = win.getPosition();
+    // win.setPosition(Math.floor(x + 0.05 * width),Math.floor(y + 0.05 * height));
+    win.setSize(Math.floor(width * zoomLevel), Math.floor(height * zoomLevel));
+  });
+
+  // 右键开启调整窗口大小功能
+  // let resizable = false;
+  win.hookWindowMessage(278, function () {
+    win.close();
+    // win.setEnabled(false); //窗口禁用
+    // if ((resizable = !resizable)) {
+    //   win.setBackgroundColor('#2a98');
+    //   win.setResizable(true);
+    // } else {
+    //   win.setBackgroundColor('#0fff');
+    //   win.setResizable(false);
+    // }
+    // let timer = setTimeout(() => {
+    //   win.setEnabled(true);
+    //   clearTimeout(timer);
+    // }, 50);
+  });
+
+  return win;
 }
 
 // 定义托盘
 function initTray() {
-  // const isOpenAtLogin = app.getLoginItemSettings().openAtLogin;
   const tray = new Tray(path.resolve(__dirname, './icon.png'));
-  tray.addListener('click', showSettingWindow);
   tray.setContextMenu(
     Menu.buildFromTemplate([
       { type: 'separator' },
       {
-        label: '关闭全部',
-        type: 'submenu',
-        submenu: [
-          { type: 'separator' },
-          { label: '关闭', click: closeAll },
-          { label: '隐藏', role: 'quit' },
-          { label: '删除', role: 'quit' },
-        ],
+        label: '不老表',
+        click: showLeaf.bind(null, './clock_dark'),
       },
-      { label: '关闭全部', click: closeAll },
-      { label: '隐藏全部', click: closeAll },
       { label: '退出', role: 'quit' },
     ])
   );
 }
+
+// 获取实例的关闭信息
+ipcMain.on('close', (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  win.close();
+});
 
 // 单一运行
 if (app.requestSingleInstanceLock({ myKey: 'myValue' })) {
   app.setAppUserModelId(package.name);
   app.on('ready', () => {
     initTray();
+    showLeaf('./clock_dark');
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });

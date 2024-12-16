@@ -3,19 +3,18 @@
 <html lang="ja">
   <head>
     <meta charset="utf-8" />
-    <title>clock</title>
+    <title>不老表</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <img style="-webkit-app-region: drag" src="clock.png" class="clock-img" alt="clock" />
+    <img src="clock.png" class="clock-img" alt="clock" />
     <div class="hand hour-hand"></div>
     <div class="hand minute-hand"></div>
     <div class="hand second-hand"></div>
     <div class="digital-time"></div>
     <div class="digital-date"></div>
   </body>
-
-  <script>
+  <script type="module">
     const secondHand = document.querySelector('.second-hand');
     const minuteHand = document.querySelector('.minute-hand');
     const hourHand = document.querySelector('.hour-hand');
@@ -45,5 +44,10 @@
       update();
       setInterval(update, 1000);
     })();
+
+    // 双击关闭
+    window.document.body.addEventListener('dblclick', () => {
+      window.electronAPI.close();
+    });
   </script>
 </html>
