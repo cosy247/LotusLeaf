@@ -9,12 +9,6 @@
     "email": "705194673@qq.com",
     "url": "https://cosy247.github.io"
   },
-  "win": {
-    "icon": "__dirname + 'logo.ico'"
-  },
-  "packagerConfig": {
-    "icon": "./logo.ico"
-  },
   "main": "./main.js",
   "devDependencies": {
     "@electron-forge/cli": "^7.6.0",
@@ -34,6 +28,7 @@
     "make": "electron-forge make"
   },
   "dependencies": {
+    "electron-log": "^5.2.4",
     "electron-squirrel-startup": "^1.0.1"
   }
 }

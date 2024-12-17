@@ -1,18 +1,29 @@
-const { app, Tray, Menu, BrowserWindow, dialog } = require('electron');
+const { app, Tray, Menu, BrowserWindow, dialog, nativeImage } = require('electron');
 const path = require('path');
 const package = require('./package.json');
+const fs = require('fs');
+const log = require('electron-log');
+
+log.transports.file.level = true; //是否输出到 日志文件
+log.transports.console.level = false; //是否输出到 控制台
+
+const leafsPath = (() => {
+  const pt = app.getAppPath('exe');
+  const targetPath = path.join(pt, pt.endsWith('.asar') ? '../leafs' : '/leafs');
+  if (!fs.existsSync(targetPath)) fs.mkdirSync(targetPath);
+  return targetPath;
+})();
+log.info('leafsPath', leafsPath);
+
+function getTrayIcon(iconPath) {
+  return nativeImage.createFromPath(path.join(__dirname, iconPath)).resize({ height: 14 });
+}
 
 // 创建窗口
-function showLeaf(path) {
-  // 获取配置
-  let winConfig = {};
-  try {
-    winConfig = require(`${path}/config.json`);
-  } catch (error) {}
-
+function showLeaf(config, indexPath) {
   // 创建窗口
-  const width = parseInt(winConfig.width) || 500;
-  const height = parseInt(winConfig.height) || 500;
+  const width = parseInt(config.width) || 500;
+  const height = parseInt(config.height) || 500;
   const win = new BrowserWindow({
     width,
     height,
@@ -20,15 +31,15 @@ function showLeaf(path) {
     resizable: true,
     frame: false,
     alwaysOnTop: true,
-    icon: `${path}/logo.png`,
+    icon: path.join(__dirname, `${path}/logo.png`),
+    skipTaskbar: true,
     webPreferences: {
       devTools: false,
       nodeIntegration: true,
       enableRemoteModule: true,
     },
   });
-  win.loadFile(`${path}/index.html`);
-  win.setSkipTaskbar(true);
+  win.loadFile(indexPath);
 
   // 滚轮缩放
   let zoomLevel = 1;
@@ -57,25 +68,70 @@ function addLeaf() {
     if (data.canceled) return;
     const filePath = data.filePaths[0];
     if (!filePath) return;
+    // 复制目录
+    log.info(`复制荷叶：${filePath} 到 ${leafsPath}/${Date.now()} `);
+    fs.cp(filePath, `${leafsPath}/${Date.now()}`, { recursive: true }, (err) => {
+      err && log.error(err);
+      updateTrayMenu();
+    });
+  });
+}
+
+// 删除荷叶
+function deleteLeaf(filePath) {
+  fs.rm(filePath, { recursive: true, force: true }, (err) => {
+    err && console.log(err);
+    updateTrayMenu();
   });
 }
 
 // 定义托盘
-function initTray() {
-  const tray = new Tray(path.resolve(__dirname, './icon.png'));
+let tray = null;
+function updateTrayMenu() {
+  if (!tray) {
+    tray = new Tray(path.join(__dirname, 'icon.png'));
+    tray.setToolTip(package.description);
+  }
+
+  // 获取荷叶
+  const files = fs.readdirSync(leafsPath);
+  log.info('files', JSON.stringify(files));
+  log.info('files', files);
+  const leafMenu = { deletes: [], leafs: [] };
+  files.forEach((filePath) => {
+    const config = JSON.parse(fs.readFileSync(`${leafsPath}/${filePath}/config.json`).toString() || '{}');
+    const icon = getTrayIcon(path.join(leafsPath, filePath, config.icon));
+    log.info('path.join(leafsPath, filePath, config.icon)', path.join(leafsPath, filePath, config.icon));
+    leafMenu.leafs.push({
+      label: config.name,
+      icon,
+      click: () => showLeaf(config, `${leafsPath}/${filePath}/${config.index}`),
+    });
+    leafMenu.deletes.push({
+      label: config.name,
+      icon,
+      click: () => deleteLeaf(`${leafsPath}/${filePath}`),
+    });
+  });
+
+  // 设置菜单
   tray.setContextMenu(
     Menu.buildFromTemplate([
+      ...leafMenu.leafs,
       { type: 'separator' },
-      { label: '添加荷叶', click: addLeaf },
-      { label: '删除荷叶', click: addLeaf },
+      { label: '添加荷叶', icon: getTrayIcon('imgs/add.png'), click: addLeaf },
+      { label: '删除荷叶', icon: getTrayIcon('imgs/delete.png'), type: 'submenu', submenu: leafMenu.deletes },
       { type: 'separator' },
       {
-        label: '不老表',
-        // icon: './leafs/clock_dark/logo.png',
-        click: showLeaf.bind(null, './leafs/clock_dark'),
+        label: '更多',
+        type: 'submenu',
+        submenu: [
+          { label: '教程帮助', icon: getTrayIcon('imgs/help.png') },
+          { label: '检查更新', icon: getTrayIcon('imgs/update.png') },
+          { label: '意见反馈', icon: getTrayIcon('imgs/feedback.png') },
+        ],
       },
-      { type: 'separator' },
-      { label: '退出', role: 'quit' },
+      { label: '退出荷叶', icon: getTrayIcon('imgs/out.png'), role: 'quit' },
     ])
   );
 }
@@ -84,7 +140,7 @@ function initTray() {
 if (app.requestSingleInstanceLock({ myKey: 'myValue' })) {
   app.setAppUserModelId(package.name);
   app.on('ready', () => {
-    initTray();
+    updateTrayMenu();
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
