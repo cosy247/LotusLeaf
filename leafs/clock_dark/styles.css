@@ -12,18 +12,19 @@
 }
 
 body {
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
   flex-direction: column;
   padding: 15px;
   height: 100vh;
-  width: 100vw;
+  width: 70vh;
+  margin: auto;
   overflow: hidden;
   background: transparent;
   animation: floatAnimation 4s linear infinite;
   box-sizing: border-box;
-  cursor: move;
   -webkit-app-region: drag;
   pointer-events: none;
 }
@@ -49,27 +50,27 @@ body {
 .second-hand {
   position: absolute;
   bottom: 51vh;
-  left: 55.6vw;
+  left: 40.6vh;
   background-color: #b3715b;
-  text-shadow: 0px 0px 10px #d99981;
+  text-shadow: 0px 0px 1vh #d99981;
   transform-origin: 50% 100%; /* 将变换原点设置在指针的顶端 */
   transform: translate(-50%, -100%); /* 将指针的起点移动到钟表的中心 */
-  border-radius: 10px;
+  border-radius: 1vh;
 }
 
 .hour-hand {
-  width: 5.5px; /* 设置时针的宽度 */
+  width: 1vh; /* 设置时针的宽度 */
   height: 7vh; /* 设置时针的长度 */
 }
 
 .minute-hand {
-  width: 4.5px; /* 设置分针的宽度 */
-  height: 10vh; /* 设置分针的长度 */
+  width: 0.8vh; /* 设置分针的宽度 */
+  height: 9vh; /* 设置分针的长度 */
 }
 
 .second-hand {
-  width: 3.5px; /* 设置秒针的宽度 */
-  height: 13vh; /* 设置分针的长度 */
+  width: 0.6vh; /* 设置秒针的宽度 */
+  height: 11vh; /* 设置分针的长度 */
 }
 
 .digital-time {
@@ -77,6 +78,7 @@ body {
   font-size: 10vh; /* 字体大小 */
   text-align: center; /* 文本居中 */
   line-height: 1em;
+  text-shadow: 0 0 10px #c58a75;
 }
 
 .digital-date {
@@ -84,4 +86,5 @@ body {
   font-size: 5vh; /* 字体大小 */
   text-align: center; /* 文本居中 */
   line-height: 1em;
+  text-shadow: 0 0 10px #c58a75;
 }
