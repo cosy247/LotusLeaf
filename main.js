@@ -1,4 +1,4 @@
-const { app, Tray, Menu, BrowserWindow, dialog, nativeImage } = require('electron');
+const { app, Tray, Menu, BrowserWindow, dialog, nativeImage, ipcMain } = require('electron');
 const path = require('path');
 const package = require('./package.json');
 const fs = require('fs');
@@ -8,15 +8,14 @@ log.transports.file.level = true; //是否输出到 日志文件
 log.transports.console.level = false; //是否输出到 控制台
 
 const leafsPath = (() => {
-  const pt = app.getAppPath('exe');
-  const targetPath = path.join(pt, pt.endsWith('.asar') ? '../leafs' : '/leafs');
+  const targetPath = path.join(app.getPath('exe'), '../leafs');
   if (!fs.existsSync(targetPath)) fs.mkdirSync(targetPath);
   return targetPath;
 })();
 log.info('leafsPath', leafsPath);
 
 function getTrayIcon(iconPath) {
-  return nativeImage.createFromPath(path.join(__dirname, iconPath)).resize({ height: 14 });
+  return nativeImage.createFromPath(iconPath).resize({ height: 14 });
 }
 
 // 创建窗口
@@ -31,9 +30,9 @@ function showLeaf(config, indexPath) {
     resizable: true,
     frame: false,
     alwaysOnTop: true,
-    icon: path.join(__dirname, `${path}/logo.png`),
     skipTaskbar: true,
     webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
       devTools: false,
       nodeIntegration: true,
       enableRemoteModule: true,
@@ -42,25 +41,43 @@ function showLeaf(config, indexPath) {
   win.loadFile(indexPath);
 
   // 滚轮缩放
-  let zoomLevel = 1;
-  const zoomMultiple = 0.03;
-  win.hookWindowMessage(522, function (e) {
-    if (Object.values(e)[3] < 127) {
-      zoomLevel += zoomMultiple;
-    } else {
-      if (zoomLevel <= 0.2) return;
-      zoomLevel -= zoomMultiple;
-    }
-    win.setSize(Math.floor(width * zoomLevel), Math.floor(height * zoomLevel), true);
-  });
+  // let zoomLevel = 1;
+  // const zoomMultiple = 0.03;
+  // win.hookWindowMessage(522, function (e) {
+  //   if (Object.values(e)[3] < 127) {
+  //     zoomLevel += zoomMultiple;
+  //   } else {
+  //     if (zoomLevel <= 0.2) return;
+  //     zoomLevel -= zoomMultiple;
+  //   }
+  //   win.setSize(Math.floor(width * zoomLevel), Math.floor(height * zoomLevel), true);
+  // });
 
-  // 右键关闭
-  win.hookWindowMessage(278, function () {
-    win.close();
-  });
+  // // 右键关闭
+  // win.hookWindowMessage(278, function () {
+  //   win.close();
+  // });
 
   return win;
 }
+
+// 通信
+ipcMain.on('close', (event) => {
+  const webContents = event.sender;
+  const win = BrowserWindow.fromWebContents(webContents);
+  win.close();
+});
+ipcMain.on('move', (event, x, y) => {
+  const webContents = event.sender;
+  const win = BrowserWindow.fromWebContents(webContents);
+  const [width, height]  = win.getSize();
+  win.setBounds({
+    x: parseInt(x),
+    y: parseInt(y),
+    width: parseInt(width),
+    height: parseInt(height),
+  });
+});
 
 // 添加荷叶
 function addLeaf() {
@@ -119,19 +136,24 @@ function updateTrayMenu() {
     Menu.buildFromTemplate([
       ...leafMenu.leafs,
       { type: 'separator' },
-      { label: '添加荷叶', icon: getTrayIcon('imgs/add.png'), click: addLeaf },
-      { label: '删除荷叶', icon: getTrayIcon('imgs/delete.png'), type: 'submenu', submenu: leafMenu.deletes },
+      { label: '添加荷叶', icon: getTrayIcon(path.join(__dirname, 'imgs/add.png')), click: addLeaf },
+      {
+        label: '删除荷叶',
+        icon: getTrayIcon(path.join(__dirname, 'imgs/delete.png')),
+        type: 'submenu',
+        submenu: leafMenu.deletes,
+      },
       { type: 'separator' },
       {
         label: '更多',
         type: 'submenu',
         submenu: [
-          { label: '教程帮助', icon: getTrayIcon('imgs/help.png') },
-          { label: '检查更新', icon: getTrayIcon('imgs/update.png') },
-          { label: '意见反馈', icon: getTrayIcon('imgs/feedback.png') },
+          { label: '教程帮助', icon: getTrayIcon(path.join(__dirname, 'imgs/help.png')) },
+          { label: '检查更新', icon: getTrayIcon(path.join(__dirname, 'imgs/update.png')) },
+          { label: '意见反馈', icon: getTrayIcon(path.join(__dirname, 'imgs/feedback.png')) },
         ],
       },
-      { label: '退出荷叶', icon: getTrayIcon('imgs/out.png'), role: 'quit' },
+      { label: '退出荷叶', icon: getTrayIcon(path.join(__dirname, 'imgs/out.png')), role: 'quit' },
     ])
   );
 }
